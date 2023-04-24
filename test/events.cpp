@@ -4,7 +4,8 @@
 #include <string>
 #include <functional>
 
-#include "class_generating/events.hpp"
+#include "class_generating/generate_class.hpp"
+#include "class_generating/event.hpp"
 
 namespace
 {
@@ -29,29 +30,29 @@ namespace
 		std::size_t years;
 		std::size_t maxYears;
 	public:
+		using generate_class::operator();
+
 		Person()
-			: construct_members
+			: generate_class
 				{
-					construct_member<"birthday">{2, &onBirthday},
-					construct_member<"death">{1, &onDie},
+					construct_member{class_generating::access_member_by_name<"birthday">, 2, &onBirthday},
+					construct_member{class_generating::access_member_by_name<"death">, 1, &onDie},
 				}
 			, years{0}
 			, maxYears{ rand() % MAX_YEARS_MAX }
 		{}
 
-		using generated_members::operator();
-
 		void operator()()
 		{
 			if (years < maxYears)
 			{
-				access_member<"birthday">::operator()(class_generating::tag<"notify">, ++years);
+				find_member_type_t<class_generating::tags::name<"birthday">>::operator()(++years);
 			}
 			else
 			{
 				if (years == maxYears)
 				{
-					access_member<"death">::operator()(class_generating::tag<"notify">, ++years);
+					find_member_type_t<class_generating::tags::name<"death">>::operator()(++years);
 				}
 			}
 		}
@@ -63,8 +64,8 @@ int main()
 {
 	srand((unsigned) time(NULL));
 	auto person = Person{};
-	person(class_generating::access_member<"birthday">)(class_generating::tag<"subscribe">, onBirthday);
-	person(class_generating::access_member<"death">)(class_generating::tag<"subscribe">, onDie);
+	person(class_generating::access_member_by_name<"birthday">)(onBirthday);
+	person(class_generating::access_member_by_name<"death">)(onDie);
 	for (std::size_t years = 0; years < MAX_YEARS_MAX; ++years)
 	{
 		person();
