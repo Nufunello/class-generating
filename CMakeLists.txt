@@ -2,7 +2,7 @@ cmake_minimum_required(VERSION 3.2)
 
 project("Class Generating" VERSION 1.0)
 
-set(features "events")
+set(features "events" "methods")
 
 foreach(feature IN LISTS features)
 	add_executable("${feature}" "test/${feature}.cpp")
