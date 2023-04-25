@@ -23,6 +23,7 @@ namespace
 	class Person
 		: public class_generating::generate_class
 		<
+			Person,
 			class_generating::event<"birthday", std::size_t, std::vector, std::back_insert_iterator>,
 			class_generating::event<"death", std::size_t, std::vector, std::back_insert_iterator>
 		>

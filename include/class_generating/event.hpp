@@ -18,7 +18,7 @@ namespace class_generating
 		{
 		public:
 			using Callback = void (*)(Argument);
-			constexpr void operator()(Callback callback, tags::tag<tags::name<"subscribe">> = {})
+			constexpr void operator()(Callback callback, tags::tags<tags::name<"subscribe">> = {})
 			{
 				InsertIterator<Container<Callback>>{callbacks} = std::move(callback);
 			}
@@ -30,7 +30,7 @@ namespace class_generating
 			//copying event directly is not something we want to support
 			event(event&&) = default;
 			event(const event&) = default;
-			constexpr void operator()(Argument argument, tags::tag<tags::name<"notify">> = {}) const
+			constexpr void operator()(Argument argument, tags::tags<tags::name<"notify">> = {}) const
 			{
 				for (const auto& callback : callbacks)
 				{
@@ -44,8 +44,8 @@ namespace class_generating
 
 	namespace generate_member
 	{
-		template <util::fixed_string Name, typename Argument, template <typename> typename Container, template <typename> typename InsertIterator>
-		struct generator<event<Name, Argument, Container, InsertIterator>>
+		template <typename This, util::fixed_string Name, typename Argument, template <typename> typename Container, template <typename> typename InsertIterator>
+		struct generator<This, event<Name, Argument, Container, InsertIterator>>
 		{
 		public:
 			using type = generate_member::generated_member<events::util::event<Name, Argument, Container, InsertIterator>>;

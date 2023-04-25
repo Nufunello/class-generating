@@ -21,54 +21,64 @@ namespace class_generating
 	{
 		template <typename Options, class_generating::util::fixed_string ...RequiredOptions>
 		static constexpr bool method_has_only_required_options =
-			reflection::has_required_options_v<method<"", function_signature<void>, Options>, method_options<RequiredOptions...>>;
+			reflection::has_required_options_v<method<"", function_signature<void>, Options>, method_options<RequiredOptions...>, true>;
 
-		template <typename Signature, typename Options> class method_implementation;
+		template <typename This, class_generating::util::fixed_string Name, typename Signature, typename Options> class method_implementation;
 
-		template <typename Return, typename ...Args, typename Options> 
+		template <typename This, class_generating::util::fixed_string Name, typename Return, typename ...Args, typename Options> 
 			requires (method_has_only_required_options<Options>)
-		class method_implementation<function_signature<Return, Args...>, Options>
+		class method_implementation<This, Name, function_signature<Return, Args...>, Options>
 		{
+			Return (*code)(This&, Args...);
+		protected:
+			template <typename T>
+			constexpr method_implementation(T&& t) : code{std::forward<T>(t)} {}
 		public:
 			Return operator()(Args ...args)
 			{
-				std::cout << "Empty function";
-				(std::cout << ... << args);
-				std::cout << std::endl;
+				return code(static_cast<This&>(*this), args...);
 			}
 		};
-		template <typename Return, typename ...Args, typename Options>
+		template <typename This, class_generating::util::fixed_string Name, typename Return, typename ...Args, typename Options>
 			requires (method_has_only_required_options<Options, "const">)
-		class method_implementation<function_signature<Return, Args...>, Options>
+		class method_implementation<This, Name, function_signature<Return, Args...>, Options>
 		{
+			Return (*code)(const This&, Args...);
+		protected:
+			template <typename T>
+			constexpr method_implementation(T&& t) : code{std::forward<T>(t)} {}
 		public:
 			Return operator()(Args ...args) const
 			{
-				std::cout << "Const function";
-				(std::cout << ... << args);
-				std::cout << std::endl;
+				return code(static_cast<const This&>(*this), args...);
 			}
 		};
 
-		template <class_generating::util::fixed_string Name, typename Signature, typename Options>
-		class method : public method_implementation<Signature, Options> {};
+		template <typename This, class_generating::util::fixed_string Name, typename Signature, typename Options>
+		class method
+			: public method_implementation<This, Name, Signature, Options> 
+		{
+		public:
+			template <typename T>
+			constexpr method(T&& t) : method_implementation<This, Name, Signature, Options>{std::forward<T>(t)} {}
+		};
 	}
 
 	namespace generate_member
 	{
-		template <util::fixed_string Name, typename Signature, typename Options>
-		class generator<method<Name, Signature, Options>>
+		template <typename This, util::fixed_string Name, typename Signature, typename Options>
+		class generator<This, method<Name, Signature, Options>>
 		{
 		public:
-			using type = generated_member<methods::util::method<Name, Signature, Options>>;
+			using type = generated_member<methods::util::method<This, Name, Signature, Options>>;
 		};
 	}
 
 	namespace reflection
 	{
-		template <util::fixed_string Name, typename Signature, util::fixed_string ...Options, util::fixed_string ...RequiredOptions>
-		struct has_required_options<method<Name, Signature, method_options<Options...>>, util::member_specification<RequiredOptions...>>
-			: has_required_options<util::member_specification<Options...>, util::member_specification<RequiredOptions...>>
+		template <util::fixed_string Name, typename Signature, util::fixed_string ...Options, util::fixed_string ...RequiredOptions, bool Only>
+		struct has_required_options<method<Name, Signature, method_options<Options...>>, util::member_specification<RequiredOptions...>, Only>
+			: has_required_options<util::member_specification<Options...>, util::member_specification<RequiredOptions...>, Only>
 		{};
 		template <util::fixed_string Name, typename Signature, util::fixed_string ...Options, util::fixed_string ...RequiredOptions>
 		struct has_not_required_options<method<Name, Signature, method_options<Options...>>, util::member_specification<RequiredOptions...>>

@@ -13,24 +13,26 @@ namespace class_generating
 
 	namespace tags
 	{
-		template <util::fixed_string ...MemberSpecification> struct includes_member_specification{};
+		template <bool Only, util::fixed_string ...MemberSpecification> struct includes_member_specification{};
 		template <util::fixed_string ...MemberSpecification> struct excludes_member_specification{};
 	}
 
 	namespace reflection
 	{
-		template <util::fixed_string ...Options, util::fixed_string ...RequiredOptions>
-		struct has_required_options<util::member_specification<Options...>, util::member_specification<RequiredOptions...>>
+		template <util::fixed_string ...Options, util::fixed_string ...RequiredOptions, bool Only>
+		struct has_required_options<util::member_specification<Options...>, util::member_specification<RequiredOptions...>, Only>
 		{
-			static constexpr bool value = ((sizeof...(Options) >= sizeof...(RequiredOptions)) && ... && []<util::fixed_string Option>(util::member_specification<Option>)
+			static constexpr bool value = (
+				(Only ? (sizeof...(Options) == sizeof...(RequiredOptions)) : (sizeof...(Options) >= sizeof...(RequiredOptions))) && 
+					... && []<util::fixed_string Option>(util::member_specification<Option>)
 					{ return (std::is_same_v<util::member_specification<Option>, util::member_specification<RequiredOptions>> || ...); }
-				(util::member_specification<Options>{}));
+					(util::member_specification<Options>{}));
 		};
 
-		template <util::fixed_string ...MemberSpecification, typename Member>
-		struct condition_for_tag<tags::includes_member_specification<MemberSpecification...>, Member>
+		template <util::fixed_string ...MemberSpecification, typename Member, bool Only>
+		struct condition_for_tag<tags::includes_member_specification<Only, MemberSpecification...>, Member>
 		{
-			static constexpr bool value = has_required_options_v<Member, util::member_specification<MemberSpecification...>>;
+			static constexpr bool value = has_required_options_v<Member, util::member_specification<MemberSpecification...>, Only>;
 		};
 
 		template <util::fixed_string ...Options, util::fixed_string ...RequiredOptions>

@@ -1,30 +1,47 @@
 #pragma once
 
 #include "class_generating/tags.hpp"
+#include "class_generating/type_operations.hpp"
 
 namespace class_generating::generate_member
 {
-	template <typename Member> struct generator;
-	template <typename Member> using generator_t = typename generator<Member>::type;
+	template <typename This, typename Member> struct generator;
+	template <typename This, typename Member> using generator_t = typename generator<This, Member>::type;
 
-	template <typename Tag, typename ...Args>
-	struct construct_arguments
+	template <typename Tags, typename Args>
+	struct construct_arguments;
+	template <typename ...Tags, typename ...Args>
+	struct construct_arguments<type_operations::array<Tags...>, type_operations::array<Args...>>
 	{
-		constexpr construct_arguments(tags::tag<Tag>, Args ...values) : values{std::move(values)...} {}
+		constexpr construct_arguments(tags::tags<Tags...>, Args ...values) : values{std::move(values)...} {}
 		std::tuple<Args...> values;
 
 		//dispathing tag due to difficulty of variadic templates parsing(generate_class constructor)
-		template <template <typename...> typename T> using type = T<Tag>; 
+		template <template <typename...> typename T> using type = T<Tags...>;
 	};
 
-	template <typename Tag, typename ...Args> construct_arguments(tags::tag<Tag>, Args ...args) -> construct_arguments<Tag, Args...>;
+	template <typename ...Tags, typename ...Args> construct_arguments(tags::tags<Tags...>, Args ...args)
+		-> construct_arguments<type_operations::array<Tags...>, type_operations::array<Args...>>;
 
 	template <typename T>
-	class generated_member : public T
+	class generated_member;
+	template <typename T> requires (std::is_default_constructible_v<T>)
+	class generated_member<T> : public T
 	{
 	public:
 		constexpr generated_member() = default;
-		template <typename Tag, typename ...Args> 
-		constexpr generated_member(construct_arguments<Tag, Args...> args) : T{std::move(std::get<Args>(args.values))...} {}
+		template <typename Tag, typename ...Args, size_t ...Indexes> 
+		constexpr generated_member(construct_arguments<Tag, Args...> args, std::index_sequence<Indexes...>)
+			: T{std::move(std::get<Indexes>(args.values))...}
+		{}
+	};
+	template <typename T> requires (!std::is_default_constructible_v<T>)
+	class generated_member<T> : public T
+	{
+	public:
+		template <typename Tag, typename ...Args, size_t ...Indexes> 
+		constexpr generated_member(construct_arguments<Tag, Args...> args, std::index_sequence<Indexes...>)
+			: T{std::move(std::get<Indexes>(args.values))...}
+		{}
 	};
 }
