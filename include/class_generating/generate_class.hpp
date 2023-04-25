@@ -15,28 +15,57 @@ namespace class_generating
 	class generate_class
 		: public generate_member::generator_t<Members>...
 	{
-		template <typename Tag>
-		using find_member_template_t = typename reflection::find_member_template<generate_class>::template by_tag<Tag>::type;
+		template <typename ...Tags>
+		struct find_member_type
+		{
+			using type = std::decay_t
+			<
+				std::invoke_result_t
+				<
+					decltype([]<typename ...Results>(type_operations::array<Results...> results)
+					{
+						static_assert(sizeof...(Results) > 0, "No member found by tags");
+						static_assert(sizeof...(Results) == 1, "More than one member found by tags");
+						if constexpr (sizeof...(Results) == 1)
+						{
+							return std::invoke([]<typename First>(type_operations::array<First>)
+								-> generate_member::generator_t<First> { return {}; }, results);
+						}
+					}), 
+					typename reflection::find_member_template<generate_class>::template by_tag<Tags...>::type
+				>
+			>;
+		};
+
+		template <typename T, typename = void> struct has_type : std::false_type{};
+		template <typename T> static constexpr bool has_type_v = has_type<T>::value;
+
 	protected:
-		template <typename Tag> using find_member_type_t = typename generate_member::template generator_t<find_member_template_t<Tag>>;
+		template <typename ...Tags> using find_member_type_t = typename find_member_type<Tags...>::type;
 		template <typename Tag, typename ...Args> using construct_member = generate_member::construct_arguments<Tag, Args...>;
 
 		template <typename ...Args> 
 		constexpr generate_class(Args&& ...args) : Args::template type<find_member_type_t> { std::forward<Args>(args) }... {}
 	public:
-		template <typename Tag> constexpr auto operator()(tags::tag<Tag>) -> find_member_type_t<Tag>& { return *this; }
-		template <typename Tag> constexpr auto operator()(tags::tag<Tag>) const -> const find_member_type_t<Tag>& { return *this; }
+		template <typename Tag, typename Return = find_member_type<Tag, tags::excludes_member_specification<"const">>>
+		requires (has_type_v<Return>) constexpr auto operator()(tags::tag<Tag>) -> Return::type { return *this; }
+		template <typename Tag> requires (!has_type_v<find_member_type<Tag, tags::excludes_member_specification<"const">>>)
+		constexpr auto operator()(tags::tag<Tag>) -> find_member_type_t<Tag> { return *this; }
+
+		template <typename Tag> constexpr auto operator()(tags::tag<Tag>) const
+			-> find_member_type_t<Tag, tags::includes_member_specification<false, "const">>& { return *this; }
 	};
+	
+	template <typename... Members>
+	template <typename T>
+	struct generate_class<Members...>::has_type<T, std::void_t<typename T::type>> : std::true_type {};
+
 	namespace reflection
 	{
-		template <template <typename...> typename GeneratedClass, typename ...Members>
-		template <util::fixed_string Name>
-		struct find_member_template<GeneratedClass<Members...>>::by_tag<tags::name<Name>>
+		template <util::fixed_string Name, typename Member>
+		struct condition_for_tag<tags::name<Name>, Member>
 		{
-			template <util::fixed_string, typename Template> struct named_template{};
-		public:
-			using type = std::invoke_result_t<decltype([]<typename Template>(named_template<Name, Template>) -> Template{ return {}; }),
-				type_operations::concatenate_structs_t<named_template<reflection::get_name_v<Members>, Members>...>>;
+			static constexpr bool value = std::is_same_v<tags::name<Name>, tags::name<reflection::get_name_v<Member>>>;
 		};
 	}
 }
