@@ -35,11 +35,11 @@ namespace class_generating
 		{}
 	public:
 		template <typename Tag, typename Return = find_members_type_t<Tag, tags::excludes_member_specification<"const">>>
-		requires (has_type_v<Return>) constexpr auto operator()(tags::tags<Tag>) -> member_type_t<Return> {  return *this; }
+		requires (has_type_v<Return>) constexpr auto operator()(tags::tags<Tag>) -> member_type_t<Return>& {  return *this; }
 
 		template <typename Tag, typename Results = find_members_type_t<Tag>, 
 			typename NonConst = typename reflection::find_member_template<Results>::template by_tag<tags::excludes_member_specification<"const">>::type>
-		requires (!has_type_v<NonConst>) constexpr auto operator()(tags::tags<Tag>) -> member_type_t<Results>  { return *this; }
+		requires (!has_type_v<NonConst>) constexpr auto operator()(tags::tags<Tag>) -> member_type_t<Results>&  { return *this; }
 
 		template <typename Tag> constexpr auto operator()(tags::tags<Tag>) const
 			-> const find_member_type_t<Tag, tags::includes_member_specification<false, "const">>& { return *this; }

@@ -53,6 +53,20 @@ namespace class_generating
 				return code(static_cast<const This&>(*this), args...);
 			}
 		};
+		template <typename This, class_generating::util::fixed_string Name, typename Return, typename ...Args, typename Options>
+			requires (method_has_only_required_options<Options, "virtual">)
+		class method_implementation<This, Name, function_signature<Return, Args...>, Options>
+		{
+			Return (*code)(This&, Args...);
+		protected:
+			template <typename T>
+			constexpr method_implementation(T&& t) : code{std::forward<T>(t)} {}
+		public:
+			virtual Return operator()(Args ...args, tags::name<Name> = {})
+			{
+				return code(static_cast<This&>(*this), args...);
+			}
+		};
 
 		template <typename This, class_generating::util::fixed_string Name, typename Signature, typename Options>
 		class method
