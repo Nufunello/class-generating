@@ -12,9 +12,8 @@ namespace class_generating
 
 	namespace events::util
 	{
-		template <class_generating::util::fixed_string/*used to resolve ambiguity*/, 
-			typename Argument, template <typename> typename Container, template <typename> typename InsertIterator> 
-		class event
+		template <typename Argument, template <typename> typename Container, template <typename> typename InsertIterator> 
+		class event_implementation
 		{
 		public:
 			using Callback = void (*)(Argument);
@@ -23,13 +22,13 @@ namespace class_generating
 				InsertIterator<Container<Callback>>{callbacks} = std::move(callback);
 			}
 			template <typename ...Arguments>
-			constexpr event(Arguments&& ...arguments)
+			constexpr event_implementation(Arguments&& ...arguments)
 				: callbacks(std::forward<Arguments>(arguments)...)
 			{}
 		protected:
 			//copying event directly is not something we want to support
-			event(event&&) = default;
-			event(const event&) = default;
+			event_implementation(event_implementation&&) = default;
+			event_implementation(const event_implementation&) = default;
 			constexpr void operator()(Argument argument, tags::tags<tags::name<"notify">> = {}) const
 			{
 				for (const auto& callback : callbacks)
@@ -39,6 +38,16 @@ namespace class_generating
 			}
 		private:
 			Container<Callback> callbacks;
+		};
+
+		template <class_generating::util::fixed_string/*used to resolve ambiguity*/,
+			typename Argument, template <typename> typename Container, template <typename> typename InsertIterator>
+		class event
+			: public event_implementation<Argument, Container, InsertIterator>
+		{
+		public:
+			template <typename ...Args>
+			constexpr event(Args&& ...args) : event_implementation<Argument, Container, InsertIterator>{std::forward<Args>(args)...} {}
 		};
 	}
 
