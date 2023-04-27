@@ -30,11 +30,9 @@ namespace class_generating
 
 		static constexpr auto virtual_specifier = class_generating::util::fixed_string{"virtual"};
 
-		static constexpr auto pure_virtual_specifier = class_generating::util::fixed_string{"=0"};
-		template <> constexpr auto unify_member_specification<"= 0"> = pure_virtual_specifier;
-		template <> constexpr auto unify_member_specification<" = 0"> = pure_virtual_specifier;
-		template <> constexpr auto unify_member_specification<"abstract"> = pure_virtual_specifier;
-		template <> constexpr auto unify_member_specification<"pure virtual"> = pure_virtual_specifier;
+		static constexpr auto pure_specifier = class_generating::util::fixed_string{"=0"};
+		template <> constexpr auto unify_member_specification<"= 0"> = pure_specifier;
+		template <> constexpr auto unify_member_specification<" = 0"> = pure_specifier;
 
 		template <bool Only, typename RequiredOptions, class_generating::util::fixed_string ...Options>
 		static constexpr bool method_has_required_options =
@@ -91,6 +89,14 @@ namespace class_generating
 			{
 				return code(static_cast<This&>(*this), std::forward<Args>(args)...);
 			}
+		};
+		template <typename This, class_generating::util::fixed_string Name, typename Return, typename ...Args,
+			class_generating::util::fixed_string ...Options>
+			requires (method_has_required_options<true, class_generating::util::member_specification<virtual_specifier, pure_specifier>, Options...>)
+		class method_implementation<This, Name, function_signature<Return, Args...>, method_options<Options...>>
+		{
+		public:
+			virtual Return operator()(Args ...args, tags::name<Name> = {}) = 0;
 		};
 
 		template <typename This, typename Options> struct add_cv_qualifier;
