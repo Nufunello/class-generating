@@ -1,0 +1,3 @@
+[submodule "third-party/chaos-pp"]
+	path = third-party/chaos-pp
+	url = https://github.com/ldionne/chaos-pp.git

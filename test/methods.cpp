@@ -90,14 +90,46 @@ namespace
 		cFunctions(class_generating::access_member_by_name<"foo">)("2");
 		functions(class_generating::access_member_by_name<"const">)("3");
 	}
+
+	class PureVirtualFunction
+		: public class_generating::generate_class
+		<
+			PureVirtualFunction,
+			class_generating::method<"foo", class_generating::function_signature<int, int>, class_generating::method_options<"virtual", "= 0">>
+		>
+	{
+	public:
+		using generate_class::operator();
+	};
+
+	class PureVirtualFunctionOverride
+		: public PureVirtualFunction
+	{
+	public:
+		PureVirtualFunctionOverride() = default;
+		using generate_class::operator();
+		int operator()(int value, class_generating::tags::name<"foo"> = {}) override
+		{
+			return value * 4;
+		}
+	};
 }
 
 int main()
 {
 	srand((unsigned) time(NULL));
-	VirtualFunction vf;
-	VirtualFunctionOverride vfo;
+	{
+		VirtualFunction vf;
+		VirtualFunctionOverride vfo;
 
-	std::cout << "Expects 1, actual " << vf(class_generating::access_member_by_name<"foo">)(1) << std::endl;
-	std::cout << "Expects 2, actual " << vfo(class_generating::access_member_by_name<"foo">)(1) << std::endl;
+		std::cout << "Expects 1, actual " << vf(class_generating::access_member_by_name<"foo">)(1) << std::endl;
+		std::cout << "Expects 2, actual " << vfo(class_generating::access_member_by_name<"foo">)(1) << std::endl;
+	}
+	{
+		PureVirtualFunctionOverride vfo;
+		PureVirtualFunction& vf = vfo;
+
+		std::cout << "Expects 4, actual " << vf(class_generating::access_member_by_name<"foo">)(1) << std::endl;
+		std::cout << "Expects 8, actual " << vfo(class_generating::access_member_by_name<"foo">)(2) << std::endl;
+	}
 }

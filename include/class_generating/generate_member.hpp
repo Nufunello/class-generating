@@ -24,24 +24,12 @@ namespace class_generating::generate_member
 		-> construct_arguments<type_operations::array<Tags...>, type_operations::array<Args...>>;
 
 	template <typename T>
-	class generated_member;
-	template <typename T> requires (std::is_default_constructible_v<T>)
-	class generated_member<T> : public T
+	class generated_member : public T
 	{
 	public:
 		constexpr generated_member() = default;
-		template <typename Tag, typename ...Args, size_t ...Indexes> 
+		template <typename Tag, typename ...Args, size_t ...Indexes>
 		constexpr generated_member(construct_arguments<Tag, Args...> args, std::index_sequence<Indexes...>)
-			: T{std::move(std::get<Indexes>(args.values))...}
-		{}
-	};
-	template <typename T> requires (!std::is_default_constructible_v<T>)
-	class generated_member<T> : public T
-	{
-	public:
-		template <typename Tag, typename ...Args, size_t ...Indexes> 
-		constexpr generated_member(construct_arguments<Tag, Args...> args, std::index_sequence<Indexes...>)
-			: T{std::move(std::get<Indexes>(args.values))...}
-		{}
+			: T{std::move(std::get<Indexes>(args.values))...} {}
 	};
 }

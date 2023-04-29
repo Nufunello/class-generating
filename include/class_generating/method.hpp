@@ -1,5 +1,7 @@
 #pragma once
 
+#include "chaos/preprocessor.h"
+
 #include "class_generating/generate_member.hpp"
 #include "class_generating/tags.hpp"
 #include "class_generating/member_specification.hpp"
@@ -19,135 +21,82 @@ namespace class_generating
 
 	namespace methods::util
 	{
-		template <class_generating::util::fixed_string ToTranslate>
-		static constexpr auto unify_member_specification = ToTranslate;
-
-		static constexpr auto const_qualifier = class_generating::util::fixed_string{"const"};
-		static constexpr auto volatile_qualifier = class_generating::util::fixed_string{"volatile"};
-
-		static constexpr auto lvalue_specifier = class_generating::util::fixed_string{"&"};
-		static constexpr auto rvalue_specifier = class_generating::util::fixed_string{"&&"};
-
-		static constexpr auto virtual_specifier = class_generating::util::fixed_string{"virtual"};
-
-		static constexpr auto pure_specifier = class_generating::util::fixed_string{"=0"};
-		template <> constexpr auto unify_member_specification<"= 0"> = pure_specifier;
-		template <> constexpr auto unify_member_specification<" = 0"> = pure_specifier;
-
-		template <bool Only, typename RequiredOptions, class_generating::util::fixed_string ...Options>
-		static constexpr bool method_has_required_options =
-			reflection::has_required_options_v<
-				method<"", function_signature<void>, method_options<unify_member_specification<Options>...>>, 
-				RequiredOptions,
-				Only>;
-
 		template <typename RequiredOptions, class_generating::util::fixed_string ...Options>
-		static constexpr bool method_has_not_required_options =
-			reflection::has_not_required_options_v<
-				method<"", function_signature<void>, method_options<unify_member_specification<Options>...>>, 
-				RequiredOptions>;
+		static constexpr bool method_has_only_required_options =
+			reflection::has_required_options_v<
+				method<"", function_signature<void>, method_options<Options...>>, 
+				RequiredOptions,
+				true>;
 
 		template <typename This, class_generating::util::fixed_string Name, typename Signature, typename Options> class method_implementation;
 
-		template <typename This, class_generating::util::fixed_string Name, typename Return, typename ...Args,
-			class_generating::util::fixed_string ...Options> 
-			requires (method_has_not_required_options<class_generating::util::member_specification<virtual_specifier>, Options...>)
-		class method_implementation<This, Name, function_signature<Return, Args...>, method_options<Options...>>
-		{
-			Return (*code)(This&, Args...);
-		protected:
-			template <typename T>
-			constexpr method_implementation(T&& t) : code{std::forward<T>(t)} {}
-		public:
-			Return operator()(Args ...args) 
-				requires (method_has_required_options<true, class_generating::util::member_specification<>, Options...>)
-			{
-				return code(static_cast<This&>(*this), std::forward<Args>(args)...);
-			}
-			Return operator()(Args ...args) const
-				requires (method_has_required_options<true, class_generating::util::member_specification<const_qualifier>, Options...>)
-			{
-				return code(static_cast<This&>(*this), std::forward<Args>(args)...);
-			}
-			Return operator()(Args ...args) volatile
-				requires (method_has_required_options<true, class_generating::util::member_specification<volatile_qualifier>, Options...>)
-			{
-				return code(static_cast<This&>(*this), std::forward<Args>(args)...);
-			}
-		};
-		template <typename This, class_generating::util::fixed_string Name, typename Return, typename ...Args,
-			class_generating::util::fixed_string ...Options>
-			requires (method_has_required_options<true, class_generating::util::member_specification<virtual_specifier>, Options...>)
-		class method_implementation<This, Name, function_signature<Return, Args...>, method_options<Options...>>
-		{
-			Return (*code)(This&, Args...);
-		protected:
-			template <typename T>
-			constexpr method_implementation(T&& t) : code{std::forward<T>(t)} {}
-		public:
-			virtual Return operator()(Args ...args, tags::name<Name> = {})
-			{
-				return code(static_cast<This&>(*this), std::forward<Args>(args)...);
-			}
-		};
-		template <typename This, class_generating::util::fixed_string Name, typename Return, typename ...Args,
-			class_generating::util::fixed_string ...Options>
-			requires (method_has_required_options<true, class_generating::util::member_specification<virtual_specifier, pure_specifier>, Options...>)
-		class method_implementation<This, Name, function_signature<Return, Args...>, method_options<Options...>>
-		{
-		public:
-			virtual Return operator()(Args ...args, tags::name<Name> = {}) = 0;
+#define VALUE_EMPTY(value) CHAOS_PP_ARRAY_IS_NIL(value)
+#define VALUE_NOT_EMPTY(_, value) CHAOS_PP_NOT(VALUE_EMPTY(value)) 
+#define GET_VALUE(value) CHAOS_PP_SEQ_CONCAT(CHAOS_PP_ARRAY_TO_SEQ(value))
+#define STRINGIZE(s, value) CHAOS_PP_STRINGIZE(GET_VALUE(value))
+#define GET_REFERENCE_OR_DEFAULT(value) CHAOS_PP_IF(VALUE_NOT_EMPTY(,value))(GET_VALUE(value), &)
+
+#define METHOD_IMPLEMENTATION(QUALIFIERS)\
+		template <typename This, class_generating::util::fixed_string Name, typename Return, typename ...Args,\
+			class_generating::util::fixed_string ...Options>\
+			requires (method_has_only_required_options\
+				<\
+					class_generating::util::member_specification\
+					<\
+						CHAOS_PP_SEQ_ENUMERATE(CHAOS_PP_SEQ_TRANSFORM(STRINGIZE, CHAOS_PP_SEQ_FILTER(VALUE_NOT_EMPTY, QUALIFIERS)))\
+					>,\
+					Options...\
+				>)\
+		class method_implementation<This, Name, function_signature<Return, Args...>, method_options<Options...>>\
+		{\
+CHAOS_PP_IF(VALUE_EMPTY(CHAOS_PP_SEQ_ELEM(4, QUALIFIERS)))\
+			(Return (*code)(\
+				GET_VALUE(CHAOS_PP_SEQ_ELEM(1, QUALIFIERS)) GET_VALUE(CHAOS_PP_SEQ_ELEM(2, QUALIFIERS))/*cv*/\
+				This GET_REFERENCE_OR_DEFAULT(CHAOS_PP_SEQ_ELEM(3, QUALIFIERS)), Args...);\
+			, CHAOS_PP_EMPTY())\
+		protected:\
+			CHAOS_PP_IF(VALUE_EMPTY(CHAOS_PP_SEQ_ELEM(4, QUALIFIERS)))\
+			(template <typename ...T> constexpr method_implementation(T&& ...args): code{std::forward<T>(args)...} {}\
+			, method_implementation() = default;)\
+		public:\
+			GET_VALUE(CHAOS_PP_SEQ_ELEM(0, QUALIFIERS)) Return operator()(Args ...args, tags::name<Name> = {})\
+				GET_VALUE(CHAOS_PP_SEQ_ELEM(1, QUALIFIERS)) GET_VALUE(CHAOS_PP_SEQ_ELEM(2, QUALIFIERS))/*cv*/\
+				GET_VALUE(CHAOS_PP_SEQ_ELEM(3, QUALIFIERS))/*reference*/\
+				GET_VALUE(CHAOS_PP_SEQ_ELEM(4, QUALIFIERS))/*pure virtual*/\
+CHAOS_PP_IF(VALUE_EMPTY(CHAOS_PP_SEQ_ELEM(4, QUALIFIERS)))\
+			({\
+				return code(static_cast<\
+					GET_VALUE(CHAOS_PP_SEQ_ELEM(1, QUALIFIERS)) GET_VALUE(CHAOS_PP_SEQ_ELEM(2, QUALIFIERS))/*cv*/\
+					This&>(*this), std::forward<Args>(args)...);\
+			}, ;)\
 		};
 
-		template <typename This, typename Options> struct add_cv_qualifier;
-		template <typename This, class_generating::util::fixed_string ...Options>
-		struct add_cv_qualifier<This, method_options<Options...>>
-		{
-			using type = std::conditional_t
-			<
-				method_has_required_options<false, class_generating::util::member_specification<Options...>, const_qualifier>,
-				std::conditional_t
-				<
-					method_has_required_options<false, class_generating::util::member_specification<Options...>, volatile_qualifier>,
-					std::add_cv_t<This>,
-					std::add_const_t<This>
-				>,
-				std::conditional_t
-				<
-					method_has_required_options<false, class_generating::util::member_specification<Options...>, volatile_qualifier>,
-					std::add_volatile_t<This>,
-					This
-				>
-			>;
-		};
+#define FOR_METHOD_IMPLEMENTATION(s, elem, data) METHOD_IMPLEMENTATION(CHAOS_PP_SEQ_INSERT(CHAOS_PP_SEQ_SIZE(data), data, elem))
+#define FOR_PURE_VIRTUAL(s, elem, data) CHAOS_PP_EXPR_S(s)(CHAOS_PP_SEQ_FOR_EACH_S(s, FOR_METHOD_IMPLEMENTATION, (CHAOS_PP_ARRAY_NIL())((1, (= 0))), CHAOS_PP_SEQ_INSERT(CHAOS_PP_SEQ_SIZE(data), data, elem)))
+#define FOR_REFERENCE(s, elem, data) CHAOS_PP_EXPR_S(s)(CHAOS_PP_SEQ_FOR_EACH_S(s, FOR_PURE_VIRTUAL, (CHAOS_PP_ARRAY_NIL())((1, (&)))((1, (&&))), CHAOS_PP_SEQ_INSERT(CHAOS_PP_SEQ_SIZE(data), data, elem)))
+#define FOR_VOLATILE(s, elem, data) CHAOS_PP_EXPR_S(s)(CHAOS_PP_SEQ_FOR_EACH_S(s, FOR_REFERENCE, (CHAOS_PP_ARRAY_NIL())((1, (volatile))), CHAOS_PP_SEQ_INSERT(CHAOS_PP_SEQ_SIZE(data), data, elem)))
+#define FOR_CONST(s, elem) CHAOS_PP_EXPR_S(s)(CHAOS_PP_SEQ_FOR_EACH_S(s, FOR_VOLATILE, (CHAOS_PP_ARRAY_NIL())((1, (const))), (elem)))
+CHAOS_PP_EXPR(CHAOS_PP_SEQ_FOR_EACH(FOR_CONST, (CHAOS_PP_ARRAY_NIL())((1, (virtual)))))
 
-		template <typename This, typename Options> struct add_ref_qualifier;
-		template <typename This, class_generating::util::fixed_string ...Options>
-		struct add_ref_qualifier<This, method_options<Options...>>
-		{
-			using type = std::conditional_t
-			<
-				method_has_required_options<false, class_generating::util::member_specification<Options...>, lvalue_specifier>,
-				std::add_lvalue_reference_t<This>,
-				std::conditional_t
-				<
-					method_has_required_options<false, class_generating::util::member_specification<Options...>, rvalue_specifier>,
-					std::add_rvalue_reference_t<This>,
-					This
-				>
-			>;
-		};
-
-		template <typename This, typename Options> using add_cv_ref_qualifiers_t = typename
-			add_ref_qualifier<typename add_cv_qualifier<This, Options>::type, Options>::type;
+#undef VALUE_EMPTY
+#undef VALUE_NOT_EMPTY
+#undef GET_VALUE
+#undef STRINGIZE
+#undef GET_REFERENCE_OR_DEFAULT
+#undef METHOD_IMPLEMENTATION
+#undef FOR_METHOD_IMPLEMENTATION
+#undef FOR_PURE_VIRTUAL
+#undef FOR_REFERENCE
+#undef FOR_VOLATILE
+#undef FOR_CONST
 
 		template <typename This, class_generating::util::fixed_string Name, typename Signature, typename Options>
 		class method
-			: public method_implementation<add_cv_ref_qualifiers_t<This, Options>, Name, Signature, Options>
+			: public method_implementation<This, Name, Signature, Options>
 		{
 		public:
-			template <typename T>
-			constexpr method(T&& t) : method_implementation<add_cv_ref_qualifiers_t<This, Options>, Name, Signature, Options>{std::forward<T>(t)} {}
+			template <typename ...Args>
+			method(Args&& ...args) : method_implementation<This, Name, Signature, Options>{std::forward<Args>(args)...} {}
 		};
 	}
 
