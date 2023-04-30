@@ -36,8 +36,8 @@ namespace
 		Person()
 			: generate_class
 				{
-					construct_member{class_generating::access_member_by_name<"birthday">, 2, &onBirthday},
-					construct_member{class_generating::access_member_by_name<"death">, 1, &onDie},
+					construct_member(class_generating::access_member_by_name<"birthday">, 2, &onBirthday),
+					construct_member(class_generating::access_member_by_name<"death">, 1, &onDie)
 				}
 			, years{0}
 			, maxYears{ rand() % MAX_YEARS_MAX }

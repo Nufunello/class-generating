@@ -31,10 +31,10 @@ namespace class_generating
 		template <typename This, class_generating::util::fixed_string Name, typename Signature, typename Options> class method_implementation;
 
 #define VALUE_EMPTY(value) CHAOS_PP_ARRAY_IS_NIL(value)
-#define VALUE_NOT_EMPTY(_, value) CHAOS_PP_NOT(VALUE_EMPTY(value)) 
-#define GET_VALUE(value) CHAOS_PP_SEQ_CONCAT(CHAOS_PP_ARRAY_TO_SEQ(value))
-#define STRINGIZE(s, value) CHAOS_PP_STRINGIZE(GET_VALUE(value))
-#define GET_REFERENCE_OR_DEFAULT(value) CHAOS_PP_IF(VALUE_NOT_EMPTY(,value))(GET_VALUE(value), &)
+#define VALUE_NOT_EMPTY(_, value, __) CHAOS_PP_NOT(VALUE_EMPTY(value)) 
+#define GET_VALUE(value) CHAOS_PP_IF(VALUE_EMPTY(value))( , CHAOS_PP_SEQ_CONCAT(CHAOS_PP_ARRAY_TO_SEQ(value)))
+#define STRINGIZE(s, value, _) CHAOS_PP_STRINGIZE(GET_VALUE(value))
+#define GET_REFERENCE_OR_DEFAULT(value) CHAOS_PP_IF(VALUE_NOT_EMPTY(,value,))(GET_VALUE(value), &)
 
 #define METHOD_IMPLEMENTATION(QUALIFIERS)\
 		template <typename This, class_generating::util::fixed_string Name, typename Return, typename ...Args,\
@@ -43,7 +43,7 @@ namespace class_generating
 				<\
 					class_generating::util::member_specification\
 					<\
-						CHAOS_PP_SEQ_ENUMERATE(CHAOS_PP_SEQ_TRANSFORM(STRINGIZE, CHAOS_PP_SEQ_FILTER(VALUE_NOT_EMPTY, QUALIFIERS)))\
+						CHAOS_PP_SEQ_ENUMERATE(CHAOS_PP_SEQ_TRANSFORM(STRINGIZE, CHAOS_PP_SEQ_FILTER(VALUE_NOT_EMPTY, QUALIFIERS, ), ))\
 					>,\
 					Options...\
 				>)\
@@ -67,7 +67,7 @@ CHAOS_PP_IF(VALUE_EMPTY(CHAOS_PP_SEQ_ELEM(4, QUALIFIERS)))\
 			({\
 				return code(static_cast<\
 					GET_VALUE(CHAOS_PP_SEQ_ELEM(1, QUALIFIERS)) GET_VALUE(CHAOS_PP_SEQ_ELEM(2, QUALIFIERS))/*cv*/\
-					This&>(*this), std::forward<Args>(args)...);\
+					This GET_REFERENCE_OR_DEFAULT(CHAOS_PP_SEQ_ELEM(3, QUALIFIERS))>(*this), std::forward<Args>(args)...);\
 			}, ;)\
 		};
 
@@ -75,8 +75,8 @@ CHAOS_PP_IF(VALUE_EMPTY(CHAOS_PP_SEQ_ELEM(4, QUALIFIERS)))\
 #define FOR_PURE_VIRTUAL(s, elem, data) CHAOS_PP_EXPR_S(s)(CHAOS_PP_SEQ_FOR_EACH_S(s, FOR_METHOD_IMPLEMENTATION, (CHAOS_PP_ARRAY_NIL())((1, (= 0))), CHAOS_PP_SEQ_INSERT(CHAOS_PP_SEQ_SIZE(data), data, elem)))
 #define FOR_REFERENCE(s, elem, data) CHAOS_PP_EXPR_S(s)(CHAOS_PP_SEQ_FOR_EACH_S(s, FOR_PURE_VIRTUAL, (CHAOS_PP_ARRAY_NIL())((1, (&)))((1, (&&))), CHAOS_PP_SEQ_INSERT(CHAOS_PP_SEQ_SIZE(data), data, elem)))
 #define FOR_VOLATILE(s, elem, data) CHAOS_PP_EXPR_S(s)(CHAOS_PP_SEQ_FOR_EACH_S(s, FOR_REFERENCE, (CHAOS_PP_ARRAY_NIL())((1, (volatile))), CHAOS_PP_SEQ_INSERT(CHAOS_PP_SEQ_SIZE(data), data, elem)))
-#define FOR_CONST(s, elem) CHAOS_PP_EXPR_S(s)(CHAOS_PP_SEQ_FOR_EACH_S(s, FOR_VOLATILE, (CHAOS_PP_ARRAY_NIL())((1, (const))), (elem)))
-CHAOS_PP_EXPR(CHAOS_PP_SEQ_FOR_EACH(FOR_CONST, (CHAOS_PP_ARRAY_NIL())((1, (virtual)))))
+#define FOR_CONST(s, elem, data) CHAOS_PP_EXPR_S(s)(CHAOS_PP_SEQ_FOR_EACH_S(s, FOR_VOLATILE, (CHAOS_PP_ARRAY_NIL())((1, (const))), (elem)))
+		CHAOS_PP_EXPR(CHAOS_PP_SEQ_FOR_EACH(FOR_CONST, (CHAOS_PP_ARRAY_NIL())((1, (virtual))), ))
 
 #undef VALUE_EMPTY
 #undef VALUE_NOT_EMPTY

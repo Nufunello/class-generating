@@ -8,20 +8,12 @@ namespace class_generating::generate_member
 	template <typename This, typename Member> struct generator;
 	template <typename This, typename Member> using generator_t = typename generator<This, Member>::type;
 
-	template <typename Tags, typename Args>
-	struct construct_arguments;
-	template <typename ...Tags, typename ...Args>
-	struct construct_arguments<type_operations::array<Tags...>, type_operations::array<Args...>>
+	template <typename ...Args>
+	struct construct_arguments
 	{
-		constexpr construct_arguments(tags::tags<Tags...>, Args ...values) : values{std::move(values)...} {}
+		constexpr construct_arguments(Args ...values) : values{std::forward<Args>(values)...} {}
 		std::tuple<Args...> values;
-
-		//dispathing tag due to difficulty of variadic templates parsing(generate_class constructor)
-		template <template <typename...> typename T> using type = T<Tags...>;
 	};
-
-	template <typename ...Tags, typename ...Args> construct_arguments(tags::tags<Tags...>, Args ...args)
-		-> construct_arguments<type_operations::array<Tags...>, type_operations::array<Args...>>;
 
 	template <typename T>
 	class generated_member : public T

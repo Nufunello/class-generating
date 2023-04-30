@@ -21,16 +21,25 @@ namespace class_generating
 		using find_members_type_t = typename reflection::find_member_template<type_operations::array<Members...>>::template by_tag<Tags...>::type;
 
 		template <typename Result> struct member_type { using type = void; };
-		template <typename Result> using member_type_t = member_type<Result>::type; 
+		template <typename Result> using member_type_t = typename member_type<Result>::type; 
 
 		template <typename T> static constexpr bool has_type_v = !std::is_same_v<void, member_type_t<T>>;
 
-	public:
+	protected:
 		template <typename ...Tags> using find_member_type_t = member_type_t<find_members_type_t<Tags...>>;
-		template <typename Tags, typename Args> using construct_member = generate_member::construct_arguments<Tags, Args>;
+		template <typename ...Tags, typename ...Args> static decltype(auto) construct_member(tags::tags<Tags...>, Args&& ...args)
+		{
+			struct constructor 
+				: generate_member::construct_arguments<Args&&...>
+			{
+				constructor(Args&& ...args) : generate_member::construct_arguments<Args&&...>{std::forward<Args>(args)...} {}
+				using type = find_member_type_t<Tags...>;
+			};
+			return constructor{std::forward<Args>(args)...};
+		}
 
 		template <typename ...Args> 
-		constexpr generate_class(Args&& ...args) : Args::template type<find_member_type_t>
+		constexpr generate_class(Args&& ...args) : Args::type
 			{ std::forward<Args>(args), std::make_index_sequence<std::tuple_size_v<decltype(args.values)>>{}}...
 		{}
 	public:

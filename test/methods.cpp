@@ -24,7 +24,7 @@ namespace
 			: generate_class
 			{
 				construct_member
-				{
+				(
 					class_generating::tags::tags
 					<
 						class_generating::tags::name<"foo">,
@@ -35,9 +35,9 @@ namespace
 						std::cout << "Non-const function" << std::endl
 						<< value << std::endl;
 					}
-				},
+				),
 				construct_member
-				{
+				(
 					class_generating::tags::tags
 					<
 						class_generating::tags::name<"foo">,
@@ -48,13 +48,16 @@ namespace
 						std::cout << "Const function" << std::endl
 						<< value << std::endl;
 					}
-				},
-				construct_member{class_generating::access_member_by_name<"const">, 
+				),
+				construct_member
+				(
+					class_generating::access_member_by_name<"const">, 
 					[](const Functions& functions, std::string value) 
 					{ 
 						std::cout << "Const function" << std::endl
 						<< value << std::endl;
-					}},
+					}
+				),
 			}
 		{}
 	};
@@ -68,7 +71,7 @@ namespace
 	{
 	public:
 		VirtualFunction() 
-			: generate_class{ construct_member { class_generating::access_member_by_name<"foo">, [](VirtualFunction&, int value) { return value; } }}{}
+			: generate_class{ construct_member ( class_generating::access_member_by_name<"foo">, [](VirtualFunction&, int value) { return value; } )}{}
 	};
 
 	class VirtualFunctionOverride

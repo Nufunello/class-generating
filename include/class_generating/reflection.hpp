@@ -8,23 +8,19 @@ namespace class_generating::reflection
 	template <template <typename...> typename GeneratedClass, typename ...Members>
 	struct find_member_template<GeneratedClass<Members...>>
 	{
-		template <typename ...Tag>
-		struct by_tag;
-	};
+		template <typename Tag, typename ...Tags>
+		struct by_tag
+		{
+		private:
+			template <typename Class, typename ...T>
+			using find_by_tag = typename find_member_template<Class>::template by_tag<T...>::type;
 
-	template <template <typename...> typename GeneratedClass, typename ...Members>
-	template <typename Tag, typename ...Tags> requires (sizeof...(Tags) > 0)
-	struct find_member_template<GeneratedClass<Members...>>::by_tag<Tag, Tags...>
-	{
-	private:
-		template <typename Class, typename ...T>
-		using find_by_tag = typename find_member_template<Class>::template by_tag<T...>::type;
-
-	public:
-		using type = find_by_tag
-		<
-			find_by_tag<GeneratedClass<Members...>, Tags...>, Tag //filter by Tag result of filter by Tags
-		>;
+		public:
+			using type = find_by_tag
+			<
+				find_by_tag<GeneratedClass<Members...>, Tags...>, Tag //filter by Tag result of filter by Tags
+			>;
+		};
 	};
 
 	template <template <typename...> typename GeneratedClass, typename ...Members>
