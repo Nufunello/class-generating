@@ -1,6 +1,6 @@
 # class-generating - header only library
 
-Generates class interface.
+Generates class interface. May be used to produce classes (meta class)
 
 Currently implemented features:
   * Event (class_generating::event)
