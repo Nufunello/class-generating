@@ -1,4 +1,4 @@
-# class-generating
+# class-generating - header only library
 
 Generates class interface.
 
