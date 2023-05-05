@@ -9,6 +9,8 @@ Currently implemented features:
   
 ## Event
 
+Event has Name, NotifyArgumentType, CallbackContainer, CallbackContainerInserter
+
 Event has constructor and two methods:
 
 Constructor forwards arguments to Callback Container constructor
