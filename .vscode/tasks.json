@@ -1,0 +1,83 @@
+{
+	"version": "2.0.0",
+	"tasks": [
+		{
+			"type": "shell",
+			"label": "CMake: generate",
+			"command": "cmake",
+			"args": [
+				"${workspaceRoot}",
+				"-G",
+				"${input:generator}",
+				"${input:CXX}",
+				"${input:CC}",
+				"-S",
+				"${workspaceRoot}",
+				"-B",
+				"${workspaceRoot}${pathSeparator}build${pathSeparator}${input:compiler}",
+				"-D",
+				"CMAKE_BUILD_TYPE=Debug"
+			]
+		},
+		{
+			"type": "shell",
+			"label": "CMake: build",
+			"command": "cmake",
+			"args": [
+				"--build",
+				"${workspaceRoot}${pathSeparator}build${pathSeparator}${input:compiler}",
+				"--target",
+				"${input:feature}"
+			],
+			"dependsOn": "CMake: generate"
+		}
+	],
+	"inputs": [
+		{
+			"id" : "compiler",
+			"type" : "command",
+			"command" : "extension.commandvariable.remember",
+			"args" : {
+				"key" : "compiler"
+			}
+		},
+		{
+			"id" : "generator",
+			"type" : "command",
+			"command" : "extension.commandvariable.remember",
+			"args" : {
+				"key" : "generator"
+			}
+		},
+		{
+			"id" : "feature",
+			"type" : "command",
+			"command" : "extension.commandvariable.remember",
+			"args" : {
+				"key" : "feature"
+			}
+		},
+		{
+			"id": "CXX",
+			"type": "command",
+			"command": "extension.commandvariable.transform",
+			"args": {
+				"text": "${remember:CXX}",
+				"find": "(.+)",
+				"flags" : "gm",
+				"replace": "CXX=$1", //If compiler not empty, than add CXX argument to cmake parameter
+			}
+		},
+		{
+			"id": "CC",
+			"type": "command",
+			"command": "extension.commandvariable.transform",
+			"args": {
+				"text": "${remember:CC}",
+				"find": "(.+)",
+				"flags" : "gm",
+				"replace": "CC=$1", //If compiler not empty, than add CC argument to cmake parameter
+			}
+		},
+	]
+}
