@@ -1,11 +1,14 @@
 #pragma once
 
 #include "class_generating/tags.hpp"
-#include "class_generating/generate_member.hpp"
 #include "class_generating/fixed_string.hpp"
-#include "class_generating/reflection.hpp"
 #include "class_generating/type_operations.hpp"
+
+#include "class_generating/generate_member.hpp"
 #include "class_generating/member_specification.hpp"
+
+#include "class_generating/reflection.hpp"
+#include "class_generating/reflection/name.hpp"
 
 namespace class_generating
 {
@@ -57,13 +60,4 @@ namespace class_generating
 	template <typename This, typename... Members>
 	template <typename T>
 	struct generate_class<This, Members...>::member_type<type_operations::array<T>> { using type = generate_member::generator_t<This, T>; };
-
-	namespace reflection
-	{
-		template <util::fixed_string Name, typename Member>
-		struct condition_for_tag<tags::name<Name>, Member>
-		{
-			static constexpr bool value = std::is_same_v<tags::name<Name>, tags::name<reflection::get_name_v<Member>>>;
-		};
-	}
 }

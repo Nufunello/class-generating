@@ -2,8 +2,11 @@
 
 #include "class_generating/fixed_string.hpp"
 #include "class_generating/tags.hpp"
+
 #include "class_generating/generate_member.hpp"
+
 #include "class_generating/reflection.hpp"
+#include "class_generating/reflection/name.hpp"
 
 namespace class_generating
 {

@@ -1,11 +1,10 @@
 #pragma once
 
-#include <type_traits>
+#include <utility>
 
 namespace class_generating::util
 {
-	template <size_t Length, typename Indexes>
-	struct fixed_string;
+	template <size_t Length, typename Indexes> struct fixed_string;
 	
 	template <size_t Length, size_t ...Indexes>
 	struct fixed_string<Length, std::index_sequence<Indexes...>>

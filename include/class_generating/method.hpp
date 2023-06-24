@@ -2,11 +2,15 @@
 
 #include "chaos/preprocessor.h"
 
-#include "class_generating/generate_member.hpp"
-#include "class_generating/tags.hpp"
-#include "class_generating/member_specification.hpp"
-#include "class_generating/reflection.hpp"
 #include "class_generating/fixed_string.hpp"
+#include "class_generating/tags.hpp"
+
+#include "class_generating/generate_member.hpp"
+#include "class_generating/member_specification.hpp"
+
+#include "class_generating/reflection.hpp"
+#include "class_generating/reflection/name.hpp"
+#include "class_generating/reflection/required_options.hpp"
 
 namespace class_generating
 {

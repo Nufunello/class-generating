@@ -1,8 +1,10 @@
 #pragma once
 
-#include "class_generating/reflection.hpp"
 #include "class_generating/fixed_string.hpp"
 #include "class_generating/type_operations.hpp"
+
+#include "class_generating/reflection.hpp"
+#include "class_generating/reflection/required_options.hpp"
 
 namespace class_generating
 {
