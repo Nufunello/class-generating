@@ -31,37 +31,36 @@ namespace class_generating
 	namespace enumeration::util
 	{
 		template <class_generating::util::fixed_string Name, typename T, typename ...Fields>
-		class value : private Fields...
+		class enumeration_value : private Fields...
 		{
 			T _;
 		public:
-			constexpr value(T value) : _{std::move(value)} {}
+			constexpr enumeration_value(T value) : _{std::move(value)} {}
 			constexpr operator const T&() const & { return (_); }
 			constexpr operator T() && { return std::move(_); }
+			template <class_generating::util::fixed_string FieldName>
+			static constexpr auto value = enumeration_value
+			{
+				reflection::enumeration::get_value_v
+				<
+					reflection::enumeration::get_field_t<enumeration_value, tags::name<FieldName>>
+				>
+			};
 		};
 	}
 
 	template <util::fixed_string Name, typename T, typename ...Fields>
-	using generate_enumeration = enumeration::util::value<Name, T, Fields...>;
+	using generate_enumeration = enumeration::util::enumeration_value<Name, T, Fields...>;
 
 	namespace enumeration
 	{
 		template <class_generating::util::fixed_string Name, auto Value> struct field{};
-
-		template <typename Enum, class_generating::util::fixed_string FieldName>
-		constexpr auto value = Enum
-		{
-			reflection::enumeration::get_value_v
-			<
-				reflection::enumeration::get_field_t<Enum, tags::name<FieldName>>
-			>
-		};
 	}
 
 	namespace reflection
 	{
 		template <util::fixed_string Name, typename ...T>
-		struct get_name<class_generating::enumeration::util::value<Name, T...>>
+		struct get_name<class_generating::enumeration::util::enumeration_value<Name, T...>>
 		{
 			static constexpr auto value = Name;
 		};
@@ -85,13 +84,13 @@ namespace class_generating
 	namespace reflection::enumeration
 	{
 		template <class_generating::util::fixed_string Name, typename T, typename ...Fields>
-		struct get_fields<class_generating::enumeration::util::value<Name, T, Fields...>> 
+		struct get_fields<class_generating::enumeration::util::enumeration_value<Name, T, Fields...>> 
 		{
 			using type = type_operations::array<Fields...>;
 		};
 
 		template <class_generating::util::fixed_string Name, typename T, typename ...Fields>
-		struct get_value_type<class_generating::enumeration::util::value<Name, T, Fields...>> 
+		struct get_value_type<class_generating::enumeration::util::enumeration_value<Name, T, Fields...>> 
 		{
 			using type = T;
 		};
@@ -103,10 +102,10 @@ namespace class_generating
 		};
 
 		template <class_generating::util::fixed_string EnumName, typename T, typename ...Fields, typename Tag>
-		struct get_field<class_generating::enumeration::util::value<EnumName, T, Fields...>, Tag>
+		struct get_field<class_generating::enumeration::util::enumeration_value<EnumName, T, Fields...>, Tag>
 		{
 			using type = std::invoke_result_t<decltype([]{
-				using enumeration = class_generating::enumeration::util::value<EnumName, T, Fields...>;
+				using enumeration = class_generating::enumeration::util::enumeration_value<EnumName, T, Fields...>;
 				using fields = typename reflection::find_member_template<get_fields_t<enumeration>>
 					::template by_tag<Tag>
 					::type;

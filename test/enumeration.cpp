@@ -17,9 +17,11 @@ namespace
 {
 	void constexppr()
 	{
-		constexpr auto fromName = class_generating::enumeration::value<Enum, "One">;
-		constexpr auto fromNumber = Enum{1};
-		static_assert(fromName == fromNumber);
+		static_assert(Enum::value<"One"> == Enum{1});
+		static_assert(Enum::value<"Two"> == Enum{2});
+
+		static_assert(Enum::value<"One"> != Enum{2});
+		static_assert(Enum::value<"Two"> != Enum{1});
 		std::cout << "Equal" << std::endl;
 	}
 }
