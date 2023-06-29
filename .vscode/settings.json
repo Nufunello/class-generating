@@ -53,7 +53,20 @@
 		"algorithm": "cpp",
 		"eoi": "cpp",
 		"iobuf": "cpp",
+<<<<<<< Updated upstream
 		"*.inc": "cpp"
 	},
 	"cmake.configureOnOpen": false
+=======
+		"*.inc": "cpp",
+		"array": "cpp",
+		"*.tcc": "cpp",
+		"cwctype": "cpp",
+		"numbers": "cpp",
+		"string_view": "cpp"
+	},
+	"cmake.configureOnOpen": false,
+	"C_Cpp.default.compilerPath": "C:\\msys64\\mingw64\\bin\\g++.exe",
+	"editor.insertSpaces": false
+>>>>>>> Stashed changes
 }

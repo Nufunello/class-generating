@@ -49,7 +49,11 @@
 				"command": "extension.commandvariable.pickStringRemember",
 				"args": {
 					"key": "feature",
+<<<<<<< Updated upstream
 					"options": [ "events", "methods", "fields" ],
+=======
+					"options": [ "events", "methods", "enumeration" ],
+>>>>>>> Stashed changes
 					"description": "Choose a feature"
 				}
 			},
