@@ -164,3 +164,40 @@ PureVirtualFunction& vf = vfo;
 std::cout << "Expects 4, actual " << vf(class_generating::access_member_by_name<"foo">)(1) << std::endl;
 std::cout << "Expects 8, actual " << vfo(class_generating::access_member_by_name<"foo">)(2) << std::endl;
 ```
+
+## Enumeration
+
+Neccessary include
+``` C++
+#include "class_generating/enumeration.hpp"
+```
+
+``` C++
+using Integer = class_generating::generate_enumeration
+<
+	"Zero", int
+	, class_generating::enumeration::empty_field<"Zero">
+	, class_generating::enumeration::field<"One", 1>
+>
+```
+Equivalent
+``` C++
+enum class Integer
+{
+	Zero,
+	One = 1
+};
+```
+
+Creating value
+``` C++
+Integer{1}	      == 1 //true
+Integer::value<"One"> == 1 //true
+Integer::value<"One"> == Integer{1} //true
+```
+Storing value
+``` C++
+Integer value = 0;
+Integer value = Integer::value<"Zero">;
+int value =  Integer::value<"Zero">;
+```
