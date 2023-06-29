@@ -8,6 +8,26 @@
 
 namespace class_generating
 {
+	namespace enumeration::util
+	{
+		struct no_value{};
+		constexpr static auto no_value_v = no_value{};
+	}
+
+	namespace enumeration
+	{
+		template <class_generating::util::fixed_string Name, auto Value> struct field{};
+		template <class_generating::util::fixed_string Name> using empty_field = field<Name, enumeration::util::no_value_v>;
+	}
+
+	namespace enumeration::util
+	{
+		template <typename T, typename Cur, typename Args = type_operations::array<>> struct iterate_transform;
+	}
+
+	template <util::fixed_string Name, typename T, typename ...Fields>
+	using generate_enumeration = typename decltype((enumeration::util::iterate_transform<T, Fields>{} + ...))::type<Name>;
+
 	namespace tags::enumeration
 	{
 		template<typename T, T> struct value{};
@@ -26,6 +46,9 @@ namespace class_generating
 
 		template <typename T, typename Tag> struct get_field;
 		template <typename T, typename Tag> using get_field_t = typename get_field<T, Tag>::type;
+
+		template <typename T, typename Tag> struct get_previous_field;
+		template <typename T, typename Tag> using get_previous_field_t = typename get_previous_field<T, Tag>::type;
 	}
 
 	namespace enumeration::util
@@ -47,14 +70,44 @@ namespace class_generating
 				>
 			};
 		};
-	}
 
-	template <util::fixed_string Name, typename T, typename ...Fields>
-	using generate_enumeration = enumeration::util::enumeration_value<Name, T, Fields...>;
+		template <typename T, typename Field>
+		struct transform_first
+		{
+			using type = Field;
+		};
+		template <typename T, class_generating::util::fixed_string Name>
+		struct transform_first<T, enumeration::empty_field<Name>>
+		{
+			using type = enumeration::field<Name, T{}>;
+		};
 
-	namespace enumeration
-	{
-		template <class_generating::util::fixed_string Name, auto Value> struct field{};
+		template <typename, typename Current>
+		struct transform_with_previous
+		{
+			using type = Current;
+		};
+		template <class_generating::util::fixed_string PrevName, auto PrevValue, class_generating::util::fixed_string Name>
+		struct transform_with_previous<enumeration::field<PrevName, PrevValue>, enumeration::empty_field<Name>>
+		{
+			using type = enumeration::field<Name, PrevValue + 1>;
+		};
+
+		template <typename T, typename Cur, typename... Args>
+		struct iterate_transform<T, Cur, type_operations::array<Args...>>
+		{
+			template <class_generating::util::fixed_string Name> using type = enumeration_value<Name, T, Args..., Cur>;
+			template <typename Next> constexpr auto operator+(const iterate_transform<T, Next, type_operations::array<>>&) const
+			{
+				using current = std::conditional_t<sizeof...(Args) == 0, typename transform_first<T, Cur>::type, Cur>;
+				return iterate_transform
+				<
+					T,
+					typename transform_with_previous<current, Next>::type,
+					type_operations::array<Args..., current>
+				>{};
+			}
+		};
 	}
 
 	namespace reflection
