@@ -26,7 +26,7 @@ namespace class_generating
 	}
 
 	template <util::fixed_string Name, typename T, typename ...Fields>
-	using generate_enumeration = typename decltype((enumeration::util::iterate_transform<T, Fields>{} + ...))::type<Name>;
+	using generate_enumeration = typename decltype((enumeration::util::iterate_transform<T, Fields>{} + ...))::template type<Name>;
 
 	namespace tags::enumeration
 	{
